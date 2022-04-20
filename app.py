@@ -52,8 +52,8 @@ rename += ['Life expectancy at birth ratio (female to male)',
            'Life expectancy at birth']
 
 gdp = pd.read_csv('gdp_per_capita.csv')
-print(gdp['Country Code'])
-print(conversion.index)
+# print(gdp['Country Code'])
+# print(conversion.index)
 gdp['id'] = [int(conversion['country-code'].loc[c]) if c in conversion.index else np.nan for c in gdp['Country Code']]
 gdp.index = gdp['id']
 
@@ -110,3 +110,28 @@ line = alt.Chart(line).mark_line(color= 'red').encode(
 )
 
 st.altair_chart(mp + line, use_container_width=False)
+
+years = [str(x) for x in list(range(1960, 2020))]
+mean_expectancy_per_year = lambda x: gd.loc[gd['Year'] == int(x)]['Life expectancy at birth'].dropna().mean()
+
+bar_df = pd.DataFrame({
+    'Year': years,
+    'Avg GDP Per Capita': gdp[years].mean(),
+    'Avg Life expectancy at birth': np.vectorize(mean_expectancy_per_year)(years)
+})
+
+bar = alt.Chart(bar_df).mark_bar(color='#5276A7').encode(
+    x=alt.X('Year:T'),
+    y=alt.Y('Avg GDP Per Capita:Q', axis=alt.Axis(titleColor='#5276A7'), scale=alt.Scale(type='log', domain=(100, 100000))),
+)
+
+line = alt.Chart(bar_df).mark_line(color='#F18727').encode(
+    x=alt.X('Year:T'),
+    y=alt.Y('Avg Life expectancy at birth:Q', axis=alt.Axis(titleColor='#F18727'), scale=alt.Scale(domain=(40, 80)))
+)
+
+chart = alt.layer(bar, line).resolve_scale(y='independent').properties(
+    width=800,
+    height=400
+)
+st.altair_chart(chart, use_container_width=False)
